@@ -18,7 +18,7 @@ class Simulation:
                 self.my_hand = deepcopy(my_hand); self.opponent_hand = deepcopy(opponent_hand)
                 _loss, pot_size = self.simulation(opponent_action=opponent_action_num, agent_action=action, pot_size=pot_size, loss=loss) # <<<
                 action_results[n] += _loss
-        print(action_results)
+        # print(action_results)
         return action_results.index(max(action_results))
 
 
@@ -136,37 +136,125 @@ class Simulation:
 if __name__ == '__main__':
     env = env()
     sim = Simulation()
+    simulation_num = 600
 
-    community_card = env.draw(input_deck=[], num=3)
-    print('Community Card :', community_card)
+    start_money = 30
+    my_money = start_money; opponent_money = start_money
+    pot_size = 0#; betting = 1
     
-    hand = env.draw(input_deck=[], num=2)
-    print('Opponent Hand :', hand)
+    while True:
+        print('\tHolding Funds \nMe : {}$\tComputer : {}$\n{}'.format(my_money, opponent_money, '-'*35))
+        my_money -= 1; opponent_money -= 1; pot_size += 2 # 참가비
+        print('\tHolding Funds \nMe : {}$\tComputer : {}$\n\tPot : {}$\n'.format(my_money, opponent_money, pot_size))
 
-    hand2 = env.draw(input_deck=[], num=2)
-    print('My Hand :', hand2)
+        community_card = env.draw(input_deck=[], num=3)
+        print('Community Card :', *community_card)
+        
+        hand = env.draw(input_deck=[], num=2)
+        # print('Opponent Hand :', *hand)
 
-    action_list = ['Check', 'Raise', 'Fold']
-    # my_action = 0 # 0 : check, 1 : raise, 2 : folds
-    my_action = int(input('Action(0:check, 1:raise, 2:fold) : '))
-    action_num = sim(num=600, community_card=community_card, my_hand=hand, opponent_hand=hand2, opponent_action_num=my_action, pot_size=0, loss=0)
-    print(action_list[action_num])
+        hand2 = env.draw(input_deck=[], num=2)
+        print('My Hand :', *hand2)
 
-    community_card = env.draw(input_deck=community_card, num=2)
+        action_list = ['Check', 'Raise', 'Fold']
 
-    print('Community Card :', community_card)
-    print('Opponent Hand :', hand)
-    print('My Hand :', hand2)
+        def betting_phase(my_money:int, opponent_money:int, pot_size:int) -> any:
+            betting = 1
+            my_action = int(input('Action(0:check, 1:raise, 2:fold) : '))
+            if my_action == 2: # fold
+                opponent_money += pot_size; pot_size = 0
+                return my_money, opponent_money, pot_size, True
+            elif my_action == 1: # raise
+                betting *= 2; my_money -= betting; pot_size += betting
+                print('\tHolding Funds \nMe : {}$\tComputer : {}$\n\tPot : {}$\n'.format(my_money, opponent_money, pot_size))
 
-    my_action = int(input('Action(0:check, 1:raise, 2:fold) : '))
-    action_num = sim(num=600, community_card=community_card, my_hand=hand, opponent_hand=hand2, opponent_action_num=my_action, pot_size=0, loss=0)
-    print(action_list[action_num])
+            action_num = sim(num=simulation_num, community_card=community_card, my_hand=hand, opponent_hand=hand2, opponent_action_num=my_action, pot_size=0, loss=0)
+            print("Computer Action : {}".format(action_list[action_num]))
+            if action_num == 2: # fold
+                my_money += pot_size; pot_size = 0
+                return my_money, opponent_money, pot_size, True
+            elif action_num == 1: # raise
+                betting *= 2; opponent_money -= betting; pot_size += betting
+                print('\tHolding Funds \nMe : {}$\tComputer : {}$\n\tPot : {}$\n'.format(my_money, opponent_money, pot_size))
+                my_action = int(input('Action(0:call, 1:fold) : '))
+                if my_action == 0: # call
+                    my_money -= betting/2; pot_size += betting/2
+                    print('\tHolding Funds \nMe : {}$\tComputer : {}$\n\tPot : {}$\n'.format(my_money, opponent_money, pot_size))
+                elif my_action == 1: # fold
+                    opponent_money += pot_size; pot_size = 0
+                    return my_money, opponent_money, pot_size, True
+            elif action_num == 0: # check or call
+                if not betting == 1:
+                    opponent_money -= betting/2; pot_size += betting/2
+                print('\tHolding Funds \nMe : {}$\tComputer : {}$\n\tPot : {}$\n'.format(my_money, opponent_money, pot_size))
 
-    
-    results = env.compare_hand(community_card=community_card, opponent_hand=hand, my_hand=hand2)
-    if results == True:
-        print('승')
-    elif results == None:
-        print('무')
-    else :
-        print('패')
+            return my_money, opponent_money, pot_size, False
+        my_money, opponent_money, pot_size, _ = betting_phase(my_money, opponent_money, pot_size)
+        if _ : continue
+
+        community_card = env.draw(input_deck=community_card, num=2)
+
+        print('Community Card :', *community_card)
+        # print('Opponent Hand :', *hand)
+        print('My Hand :', *hand2)
+
+        my_money, opponent_money, pot_size, _ = betting_phase(my_money, opponent_money, pot_size)
+        if _ : continue
+
+        # my_action = int(input('Action(0:check, 1:raise, 2:fold) : '))
+
+        # if my_action == 2: # fold
+        #     opponent_money += pot_size
+        #     continue
+        # elif my_action == 1: # raise
+        #     my_money -= betting; pot_size += betting; betting *= 2
+        #     print('\tHolding Funds \nMe : {}$\tComputer : {}$\nPot : {}$'.format(my_money, opponent_money, pot_size))
+
+        # action_num = sim(num=simulation_num, community_card=community_card, my_hand=hand, opponent_hand=hand2, opponent_action_num=my_action, pot_size=0, loss=0)
+        # print(action_list[action_num])
+
+        # action_num = sim(num=simulation_num, community_card=community_card, my_hand=hand, opponent_hand=hand2, opponent_action_num=my_action, pot_size=0, loss=0)
+        # print(action_list[action_num])
+        # if action_num == 2: # fold
+        #     my_money += pot_size
+        #     continue
+        # elif action_num == 1: # raise
+        #     opponent_money -= betting; pot_size += betting; betting *= 2
+        #     print('\tHolding Funds \nMe : {}$\tComputer : {}$\nPot : {}$'.format(my_money, opponent_money, pot_size))
+        #     my_action = int(input('Action(0:call, 1:fold) : '))
+        #     if my_action == 0: # call
+        #         my_money -= betting/2; pot_size -= betting/2
+        #         print('\tHolding Funds \nMe : {}$\tComputer : {}$\nPot : {}$'.format(my_money, opponent_money, pot_size))
+        #     elif my_action == 1: # fold
+        #         opponent_money += pot_size
+        #         continue
+        # elif action_num == 0: # check or call
+        #     opponent_money -= betting/2; pot_size += betting/2
+        #     print('\tHolding Funds \nMe : {}$\tComputer : {}$\nPot : {}$'.format(my_money, opponent_money, pot_size))
+
+        
+        results = env.compare_hand(community_card=community_card, opponent_hand=hand, my_hand=hand2)
+        if results == True:
+            print('Win')
+            my_money += pot_size
+            pot_size = 0
+        elif results == None:
+            print('Draw')
+            my_money += (pot_size/2); opponent_money += (pot_size/2)
+            pot_size = 0
+        else :
+            print('Lose')
+            opponent_money += pot_size
+            pot_size = 0
+
+        # print('\tHolding Funds \nMe : {}$\tComputer : {}$'.format(my_money, opponent_money))
+        print('Computer Hand :', *hand[:2],'\nCommunity Card :', *hand[2:])
+
+        if my_money <= 0 or opponent_money <= 0:
+            break
+    print('\tHolding Funds \nMe : {}$\tComputer : {}$\n'.format(my_money, opponent_money))
+    env() # 덱 초기화
+
+"""
+
+"""
