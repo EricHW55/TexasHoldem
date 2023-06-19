@@ -3,14 +3,18 @@ import random
 
 
 class env:
-    def __init__(self):
-        self.deck = [(s,i) for s in range(0, 4) for i in range(2, 15)]  # (Shape, Num) # S : 0, H : 1, D : 2, C : 3
+    def __init__(self, shape_to_num:bool=False):
+        if shape_to_num:
+            self.deck = [(s,i) for s in range(0, 4) for i in range(2, 15)]  # (Shape, Num) # S : 0, H : 1, D : 2, C : 3
+        else:
+            shapes = ['♠', '♡', '♢', '♣']
+            self.deck = [(s,i) for s in shapes for i in range(2, 15)]
+        random.shuffle(self.deck)
+    
+    def __call__(self): # 덱 초기화
         shapes = ['♠', '♡', '♢', '♣']
         self.deck = [(s,i) for s in shapes for i in range(2, 15)]
         random.shuffle(self.deck)
-    
-    def __call__(self):
-        ...
         
     def draw(self, input_deck:list, num:int=1) -> list:
         input_deck += self.deck[0:num]
